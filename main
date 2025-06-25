@@ -1,26 +1,48 @@
-@bot.message_handler(func=lambda message: True)
-def send_video(message):
-    user_link = message.text.strip()
-    url = "https://terabox-direct-download.p.rapidapi.com/download"
-    querystring = {"url": user_link}
+<?php
 
-    headers = {
-        "X-RapidAPI-Key": "🔑 d784df92f7mshe2284e3acf48d10p132bb5jsn152b126cb96f",  # replace with your actual key
-        "X-RapidAPI-Host": "terabox-direct-download.p.rapidapi.com"
-    }
+$botToken = "7509061898:AAHBBfgfGrui17diDqNDtc41j0M3yYp4D8E";
+$update = json_decode(file_get_contents("php://input"), true);
 
-    response = requests.get(url, headers=headers, params=querystring)
+$chat_id = $update["message"]["chat"]["id"] ?? null;
+$text = $update["message"]["text"] ?? '';
 
-    if response.status_code == 200:
-        try:
-            data = response.json()
-            video_url = data.get("download_link") or data.get("video_url")
+function sendMessage($chat_id, $text, $botToken) {
+    $url = "https://api.telegram.org/bot$botToken/sendMessage";
+    $postFields = [
+        'chat_id' => $chat_id,
+        'text' => $text
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $output = curl_exec($ch);
+    curl_close($ch);
+    return $output;
+}
 
-            if video_url:
-                bot.send_message(message.chat.id, f"📥 Here's your video:\n{video_url}")
-            else:
-                bot.send_message(message.chat.id, "❌ Video URL not found in response.")
-        except Exception as e:
-            bot.send_message(message.chat.id, f"❌ Error: {str(e)}")
-    else:
-        bot.send_message(message.chat.id, f"❌ API request failed. Code: {response.status_code}")
+if ($chat_id && strpos($text, "teraboxapp.com") !== false) {
+    $api_url = "https://terabox-downloader-direct-download-link-generator.p.rapidapi.com/";
+    $curl = curl_init();
+
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $api_url . "?url=" . urlencode($text),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            "x-rapidapi-host: terabox-downloader-direct-download-link-generator.p.rapidapi.com",
+            "x-rapidapi-key: d784df92f7mshe2284e3acf48d10p132bb5jsn152b126cb96f"
+        ],
+    ]);
+
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    $result = json_decode($response, true);
+    $download_link = $result['download_url'] ?? ($result['direct_link'] ?? '❌ Download link not found.');
+
+    sendMessage($chat_id, "📥 Download Link:\n$download_link", $botToken);
+} elseif ($chat_id) {
+    sendMessage($chat_id, "🔗 Terabox link bhejo!", $botToken);
+}
