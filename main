@@ -1,0 +1,26 @@
+@bot.message_handler(func=lambda message: True)
+def send_video(message):
+    user_link = message.text.strip()
+    url = "https://terabox-direct-download.p.rapidapi.com/download"
+    querystring = {"url": user_link}
+
+    headers = {
+        "X-RapidAPI-Key": "🔑 d784df92f7mshe2284e3acf48d10p132bb5jsn152b126cb96f",  # replace with your actual key
+        "X-RapidAPI-Host": "terabox-direct-download.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            video_url = data.get("download_link") or data.get("video_url")
+
+            if video_url:
+                bot.send_message(message.chat.id, f"📥 Here's your video:\n{video_url}")
+            else:
+                bot.send_message(message.chat.id, "❌ Video URL not found in response.")
+        except Exception as e:
+            bot.send_message(message.chat.id, f"❌ Error: {str(e)}")
+    else:
+        bot.send_message(message.chat.id, f"❌ API request failed. Code: {response.status_code}")
